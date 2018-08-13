@@ -3,8 +3,8 @@
 This library allows your agent code to work with Google IoT Core.
 
 This version of the library supports the following functionality:
-- Registering a device in Google IoT Core
-- Connecting and disconnecting to/from Google IoT Core
+- Registering a device in Google IoT Core.
+- Connecting and disconnecting to/from Google IoT Core.
 - Publishing telemetry events to Google IoT Core.
 - Receiving configurations from Google IoT Core.
 - Reporting a device state to Google IoT Core.
@@ -35,13 +35,13 @@ These settings affect the transport's behavior and the operations.
 | "qos" | Integer | Optional | 0 | MQTT QoS. [Google IoT Core supports QoS 0 and 1 only](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#quality_of_service_qos). |
 | "keepAlive" | Integer | Optional | 60 | Keep-alive MQTT parameter. For more information, see [here](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#keep-alive). |
 
-**Note**: please read the [Bayeux protocol specification](https://docs.cometd.org/current/reference/#_bayeux) to understand these parameters better.
+**Note**: TODO place some general info about MQTT in Google IoT Core?
 
 ## GoogleIoTCore.Client Class ##
 
 ### Constructor: GoogleIoTCore.Client(*projectId, cloudRegion, registryId, deviceId, privateKey[, configuration[, onConnected[, onDisconnected]]]*) ###
 
-This method returns a new Bayeux.Client instance.
+This method returns a new GoogleIoTCore.Client instance.
 
 | Parameter | Data Type | Required? | Description |
 | --- | --- | --- | --- |
@@ -58,28 +58,21 @@ This method returns a new Bayeux.Client instance.
 
 This callback is called every time the client is connected.
 
-The client is considered as connected when the handshake and the first "connect" messages were successful. To learn what handshake and "connect" messages are, please read the [Bayeux protocol specification](https://docs.cometd.org/current/reference/#_bayeux).
+TODO: should we say something about connectionless transports?
 
 | Parameter | Data Type | Description |
 | --- | --- | --- |
-| *error* | [Bayeux.Error](#bayeuxerror-class) | null if the connection is successful, error details otherwise. |
+| *error* | Integer | `0` if the connection is successful, an [error code](TODO) otherwise. |
 
-#### Callback: onDisconnected(*reason*) ####
+#### Callback: onDisconnected(*error*) ####
 
 This callback is called every time the client is disconnected.
-
-The client is considered as disconnected if any of these events occurs:
-- disconnection was caused by application
-- sending of "connect" message is failed (e.g., request timeout, HTTP error)
-- the last "connect" message is unsuccessful (response's "successful" field is "false") and has no "reconnect" advice set to "retry"
-
-To learn what "connect" message is, please read the [Bayeux protocol specification](https://docs.cometd.org/current/reference/#_bayeux).
 
 This is a good place to call the [connect()](#connect) method again if it was an unexpected disconnection.
 
 | Parameter | Data Type | Description |
 | --- | --- | --- |
-| *reason* | [Bayeux.Error](#bayeuxerror-class) | null if the disconnection was caused by the [disconnect()](#disconnect) method, error details which explains a reason of the disconnection otherwise. |
+| *error* | Integer | `0` if the disconnection was caused by the disconnect() method, an [error code](TODO) which explains a reason of the disconnection otherwise. |
 
 #### Configuration ####
 
@@ -87,122 +80,99 @@ These settings affect the client's behavior and the operations.
 
 | Key (String) | Value Type | Required? | Default | Description |
 | --- | --- | --- | --- | --- |
-| "url" | String | Yes | - | The URL of the Bayeux server this client will connect to. |
-| "backoffIncrement" | Integer | Optional | 1 | The number of seconds that the backoff time increments every time a connection with the Bayeux server fails. BayeuxClient attempts to reconnect after the backoff time elapses. |
-| "maxBackoff" | Integer | Optional | 60 | The maximum number of seconds of the backoff time after which the backoff time is not incremented further. |
-| "requestTimeout" | Integer | Optional | 10 | The maximum number of seconds to wait before considering a request to the Bayeux server failed. |
-| "requestHeaders" | Table | Optional | 10 | A key-value table containing the request headers to be sent for every Bayeux request (for example, {"My-Custom-Header":"MyValue"}). |
-
-**Note**: please read the [Bayeux protocol specification](https://docs.cometd.org/current/reference/#_bayeux) to understand these parameters better.
+| "maxPendingSetStateRequests" | Integer | Optional | 3 | Maximum amount of pending Set State operations. |
+| "maxPendingPublishTelemetryRequests" | Integer | Optional | 3 | Maximum amount of pending Publish Telemetry operations. |
 
 #### Example ####
 
 ```squirrel
-#require "BayeuxClient.agent.lib.nut:1.0.0"
+#require "GoogleIoTCore.agent.lib.nut:1.0.0"
 
-function onConnected(error) {
-    if (error != null) {
-        server.error("Сonnection failed");
-        server.error(format("Error type: %d, details: %s", error.type, error.details.tostring()));
-        return;
-    }
-    server.log("Connected!");
-    // Here is a good place to make required subscriptions
-}
-
-function onDisconnected(error) {
-    if (error != null) {
-        server.error("Disconnected unexpectedly with error:");
-        server.error(format("Error type: %d, details: %s", error.type, error.details.tostring()));
-        // Reconnect if disconnection is not initiated by application
-        client.connect();
-    } else {
-        server.log("Disconnected by application");
-    }
-}
-
-config <- {
-    "url" : "yourBayeuxServer.com",
-    "requestHeaders": {
-        "Authorization" : "<Your authorization header if needed>"
-    }
-};
-
-// Instantiate and connect a client
-client <- Bayeux.Client(config, onConnected, onDisconnected);
-client.connect();
 ```
 
-### connect() ###
+### registerDevice(*iss, secret, publicKey[, onDone]*) ###
 
-This method negotiates a connection to the Bayeux server specified in the [configuration](#configuration).
+This method registers a device in Google IoT Core.
 
-Connection negotiation includes handshake and the first "connect" messages. To learn what handshake and "connect" messages are, please read the [Bayeux protocol specification](https://docs.cometd.org/current/reference/#_bayeux).
-
-The method returns nothing. A result of the operation may be obtained via the [*onConnected*](#callback-onconnectederror) callback specified in the client's constructor or set by calling [setOnConnected()](#setonconnectedcallback) method.
-
-### disconnect() ###
-
-This method closes the connection to the Bayeux server. Does nothing if the connection is already closed.
-
-The method returns nothing. When the disconnection is completed the [*onDisconnected*](#callback-ondisconnectedreason) callback is called, if specified in the client's constructor or set by calling [setOnDisconnected()](#setondisconnectedcallback) method.
-
-### isConnected() ###
-
-This method checks if the client is connected to the Bayeux server.
-
-The method returns *Boolean*: `true` if the client is connected, `false` otherwise.
-
-### subscribe(*topic, handler[, onDone]*) ###
-
-This method makes a subscription to the specified topic (channel).
-
-All incoming messages with that topic are passed to the specified handler. If the subscription is already made this method just sets new handler for that subscription.
-
-The [subscribe()](#subscribetopic-handler-ondone) method can be called for different topics so the client can be subscribed to multiple topics. Any handler can be used for one or several subscriptions.
+The method attempts to find already existing device with the device ID specified in the client’s constructor and compare that device’s public key with the key passed in. If no device found, the method tries to create one. If any device is found and keys are identical, the method succeeds. Otherwise, the method returns an error.
 
 The method returns nothing. A result of the operation may be obtained via the [*onDone*](#callback-ondoneerror) callback if specified in this method.
 
 | Parameter | Data Type | Required? | Description |
 | --- | --- | --- | --- |
-| *topic* | String  | Yes | The topic to subscribe to. Valid topic (channel) should meet [this description](https://docs.cometd.org/current/reference/#_channels). |
-| *[handler](#callback-handlertopic-message)* | Function  | Yes | Callback called every time a message with the *topic* is received. |
+| *iss* | String  | Yes | JWT issuer. |
+| *secret* | String  | Yes | JWT sign secret key. |
+| *publicKey* | String  | Yes | [Public key](https://cloud.google.com/iot/docs/how-tos/credentials/keys?hl=ru) for a new device. |
 | *[onDone](#callback-ondoneerror)* | Function  | Optional | Callback called when the operation is completed or an error occurs. |
 
-#### Callback: handler(*topic, message*) ####
+### connect(*transport*) ###
 
-This callback is called every time a message with the topic specified in the [subscribe()](#subscribetopic-handler-ondone) method is received.
+This method opens a connection to Google IoT Core.
+
+For connectionless transports, like HTTP, immediately calls the onConnected callback (if specified in the client's constructor) with successful result.
+
+Google IoT Core supports only one connection per device.
+
+The method returns nothing. A result of the operation may be obtained via the [*onConnected*](#callback-onconnectederror) callback specified in the client's constructor or set by calling [setOnConnected()](#setonconnectedcallback) method.
+
+| Parameter | Data Type | Required? | Description |
+| --- | --- | --- | --- |
+| *transport* | GoogleIoTCore.\*Transport  | Yes | Instance of GoogleIoTCore.\*Transport class. |
+
+### disconnect() ###
+
+This method closes the connection to Google IoT Core. Does nothing if the connection is already closed.
+
+For connectionless transports, like HTTP, immediately calls the [*onDisconnected*](#callback-ondisconnectederror) callback (if specified) with no errors.
+
+The method returns nothing. When the disconnection is completed the [*onDisconnected*](#callback-ondisconnectederror) callback is called, if specified in the client's constructor or set by calling [setOnDisconnected()](#setondisconnectedcallback) method.
+
+### isConnected() ###
+
+This method checks if the client is connected to Google IoT Core.
+
+The method returns Boolean: `true` if the client is connected, `false` otherwise.
+
+TODO: should we say something about connectionless transports?
+
+### publishTelemetry(*data[, subfolder[, onDone]]*) ###
+
+This method [publishes a telemetry event to Google IoT Core](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#publishing_telemetry_events).
+
+The method returns nothing. A result of the operation may be obtained via the [*onDone*](#callback-ondoneerror) callback if specified in this method.
+
+| Parameter | Data Type | Required? | Description |
+| --- | --- | --- | --- |
+| *data* | Object  | Yes | Any serializable object. |
+| *subfolder* | String  | Optional | The subfolder can be used as an event category or classification. For more information, see [here](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#publishing_telemetry_events_to_separate_pubsub_topics). |
+| *[onDone](#callback-ondoneerror)* | Function  | Optional | Callback called when the operation is completed or an error occurs. |
+
+### enableConfigurationReceiving(*onReceive[, onDone]*) ###
+
+This method enables [configuration receiving from Google IoT Core](https://cloud.google.com/iot/docs/how-tos/config/configuring-devices?hl=ru).
+
+The method works only for MQTT transport.
+
+To enable the feature, specify the [*onReceive*](TODO) callback. To disable the feature, specify `null` as that callback.
+
+The method returns nothing. A result of the operation may be obtained via the [*onDone*](#callback-ondoneerror) callback if specified in this method.
+
+| Parameter | Data Type | Required? | Description |
+| --- | --- | --- | --- |
+| *onReceive* | Function  | Yes | [Callback](TODO) called every time a configuration is received from Google IoT Core. `null` disables the feature. |
+| *[onDone](#callback-ondoneerror)* | Function  | Optional | [Callback](TODO) called when the operation is completed or an error occurs. |
+
+#### Callback: onReceive(*configuration*) ####
+
+This callback is called every time [a configuration](https://cloud.google.com/iot/docs/concepts/devices?hl=ru#device_configuration) is received.
 
 | Parameter | Data Type | Description |
 | --- | --- | --- |
-| *topic* | String | Topic id. |
-| *message* | Table | The data from received Bayeux message (event). [Described here](https://docs.cometd.org/current/reference/#_code_data_code). |
-
-#### Callback: onDone(*error*) #####
-
-This callback is called when a method is completed.
-
-| Parameter | Data Type | Description |
-| --- | --- | --- |
-| *error* | [Bayeux.Error](#bayeuxerror-class) | null if the operation is completed successfully, error details otherwise. |
+| *configuration* | Blob | [Configuration](https://cloud.google.com/iot/docs/concepts/devices?hl=ru#device_configuration). An arbitrary user-defined blob. |
 
 #### Example ####
 
 ```squirrel
-function handler(topic, msg) {
-    server.log(format("Event received from %s channel: %s", topic, http.jsonencode(msg)));
-}
-
-function onDone(error) {
-    if (error != null) {
-        server.error("Subscribing failed:");
-        server.error(format("Error type: %d, details: %s", error.type, error.details.tostring()));
-    } else {
-        server.log("Successfully subscribed");
-    }
-}
-
-client.subscribe("/example/topic", handler, onDone);
 ```
 
 ### unsubscribe(*topic[, onDone]*) ###
@@ -227,16 +197,6 @@ This callback is called when a method is completed.
 #### Example ####
 
 ```squirrel
-function onDone(error) {
-    if (error != null) {
-        server.error("Unsubscribing failed:");
-        server.error(format("Error type: %d, details: %s", error.type, error.details.tostring()));
-    } else {
-        server.log("Successfully unsubscribed");
-    }
-}
-
-client.unsubscribe("/example/topic", onDone);
 ```
 
 ### setOnConnected(*callback*) ###

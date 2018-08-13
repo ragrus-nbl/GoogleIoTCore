@@ -3,15 +3,15 @@
 This library allows your agent code to work with Google IoT Core.
 
 This version of the library supports the following functionality:
-- Registering a device in Google IoT Core.
+- Registering a device in Google IoT Core (optional feature).
 - Connecting and disconnecting to/from Google IoT Core.
 - Publishing telemetry events to Google IoT Core.
 - Receiving configurations from Google IoT Core.
 - Reporting a device state to Google IoT Core.
 
-The library provides an opportunity to work via different transports, but currently supports only MQTT transport.
+The library provides an opportunity to work via [different transports](https://cloud.google.com/iot/docs/concepts/protocols?hl=ru), but currently supports only [MQTT transport](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru).
 
-**To add this library to your project, add** `#require "GoogleIoTCore.agent.lib.nut:1.0.0"` **to the top of your agent code**
+**To add this library to your project, add** `#require "GoogleIoTCore.agent.lib.nut:1.0.0"` **to the top of your agent code**.
 
 ## Library Usage ##
 
@@ -31,7 +31,7 @@ These settings affect the transport's behavior and the operations.
 
 | Key (String) | Value Type | Required? | Default | Description |
 | --- | --- | --- | --- | --- |
-| "url" | String | Yes | - | MQTT broker URL formatted as "ssl://<hostname>:<port>". |
+| "url" | String | Yes | - | MQTT broker URL formatted as `ssl://<hostname>:<port>`. |
 | "qos" | Integer | Optional | 0 | MQTT QoS. [Google IoT Core supports QoS 0 and 1 only](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#quality_of_service_qos). |
 | "keepAlive" | Integer | Optional | 60 | Keep-alive MQTT parameter. For more information, see [here](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#keep-alive). |
 
@@ -45,14 +45,14 @@ This method returns a new GoogleIoTCore.Client instance.
 
 | Parameter | Data Type | Required? | Description |
 | --- | --- | --- | --- |
-| *projectId* | String | Yes | See [here](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
-| *cloudRegion* | String | Yes | See [here](https://cloud.google.com/iot/docs/requirements?hl=ru#cloud_regions). |
-| *registryId* | String | Yes | See [here](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
-| *deviceId* | String | Yes | See [here](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
-| *privateKey* | String | Yes |  |
+| *projectId* | String | Yes | [Project ID](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
+| *cloudRegion* | String | Yes | [Cloud region](https://cloud.google.com/iot/docs/requirements?hl=ru#cloud_regions). |
+| *registryId* | String | Yes | [Registry ID](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
+| *deviceId* | String | Yes | [Device ID](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
+| *privateKey* | String | Yes | [Private key](https://cloud.google.com/iot/docs/how-tos/credentials/keys?hl=ru). |
 | [*configuration*](#configuration) | Table | Optional | Key-value table with settings. There are required and optional settings. |
 | [*onConnected*](#callback-onconnectederror) | Function | Optional | Callback called every time the client is connected. |
-| [*onDisconnected*](#callback-ondisconnectedreason) | Function | Optional | Callback called every time the client is disconnected. |
+| [*onDisconnected*](#callback-ondisconnectederror) | Function | Optional | Callback called every time the client is disconnected. |
 
 #### Callback: onConnected(*error*) ####
 
@@ -80,14 +80,13 @@ These settings affect the client's behavior and the operations.
 
 | Key (String) | Value Type | Required? | Default | Description |
 | --- | --- | --- | --- | --- |
-| "maxPendingSetStateRequests" | Integer | Optional | 3 | Maximum amount of pending Set State operations. |
-| "maxPendingPublishTelemetryRequests" | Integer | Optional | 3 | Maximum amount of pending Publish Telemetry operations. |
+| "maxPendingSetStateRequests" | Integer | Optional | 3 | Maximum amount of pending [Set State operations](TODO). |
+| "maxPendingPublishTelemetryRequests" | Integer | Optional | 3 | Maximum amount of pending [Publish Telemetry operations](TODO). |
 
 #### Example ####
 
 ```squirrel
 #require "GoogleIoTCore.agent.lib.nut:1.0.0"
-
 ```
 
 ### registerDevice(*iss, secret, publicKey[, onDone]*) ###
@@ -175,24 +174,16 @@ This callback is called every time [a configuration](https://cloud.google.com/io
 ```squirrel
 ```
 
-### unsubscribe(*topic[, onDone]*) ###
+### reportDeviceState(*state[, onDone]*) ###
 
-This method unsubscribes from the specified topic.
+This method [reports a device state to Google IoT Core](https://cloud.google.com/iot/docs/how-tos/config/getting-state?hl=ru#reporting_device_state).
 
 The method returns nothing. A result of the operation may be obtained via the [*onDone*](#callback-ondoneerror) callback if specified in this method.
 
 | Parameter | Data Type | Required? | Description |
 | --- | --- | --- | --- |
-| *topic* | String  | Yes | The topic to unsubscribe from. Valid topic (channel) should meet [this description](https://docs.cometd.org/current/reference/#_channels). |
+| *state* | Object  | Yes | [Device state](https://cloud.google.com/iot/docs/concepts/devices?hl=ru#device_state). Any serializable object. |
 | *[onDone](#callback-ondoneerror)* | Function  | Optional | Callback called when the operation is completed or an error occurs. |
-
-#### Callback: onDone(*error*) #####
-
-This callback is called when a method is completed.
-
-| Parameter | Data Type | Description |
-| --- | --- | --- |
-| *error* | [Bayeux.Error](#bayeuxerror-class) | null if the operation is completed successfully, error details otherwise. |
 
 #### Example ####
 
@@ -211,18 +202,19 @@ This method sets [*onDisconnected*](#callback-ondisconnectedreason) callback. Th
 
 This method enables (*value* is `true`) or disables (*value* is `false`) the client debug output (including error logging). It is disabled by default. The method returns nothing.
 
-## Bayeux.Error Class ##
+### Additional Info ###
 
-This class represents an error returned by the library and has the following public properties:
-- *type* &mdash; The error type, which is one of the following *BAYEUX_CLIENT_ERROR_TYPE* enum values:
-    - *LIBRARY_ERROR* &mdash; The library is wrongly initialized, a method is called when it is not allowed, or an internal error has occurred. The [error code](#library-error-codes) can be found in the *details* property. Usually, this indicates an issue during application development which should be fixed during debugging and therefore should not occur after the application has been deployed.
-    - *TRANSPORT_FAILED* &mdash; An HTTP request to the Bayeux server failed. The error code can be found in the *details* property. This is the code returned by [Imp's HTTP API](https://developer.electricimp.com/api/httprequest/sendasync). This error may occur during the normal execution of an application. The application logic should process this error.
-   - *BAYEUX_ERROR* &mdash; An unexpected response from the Bayeux server or simply unsuccessful Bayeux operation. The error description can be found in the *details* property. It may contain a description provided by the Bayeux server. Generally, it is a human-readable string.
-- *details* &mdash; An integer error code or a string containing a description of the error.
+#### Callback: onDone(*error*) #####
 
-### Library Error Codes ###
+This callback is called when a method is completed. This is just a common description of the similar callbacks specified as an argument in several methods. An application may use different callbacks with the described signature for different methods. Or define one callback and pass it to different methods.
 
-An *Integer* error code which specifies a concrete LIBRARY error (if any) happened during an operation.
+| Parameter | Data Type | Description |
+| --- | --- | --- |
+| *[error](#error-code)* | Integer | `0` if the operation is completed successfully, an [error code](#error-code) otherwise. |
+
+### Error Codes ###
+
+An *Integer* error code which specifies a concrete error (if any) happened during an operation.
 
 | Error Code | Error Name | Description |
 | --- | --- | --- |
@@ -230,11 +222,6 @@ An *Integer* error code which specifies a concrete LIBRARY error (if any) happen
 | 2 | BC_LIBRARY_ERROR_ALREADY_CONNECTED | The client is already connected. |
 | 3 | BC_LIBRARY_ERROR_OP_NOT_ALLOWED_NOW | The operation is not allowed now. E.g. the same operation is already in process. |
 | 4 | BC_LIBRARY_ERROR_NOT_SUBSCRIBED | The client is not subscribed to the topic. E.g. it is impossible to unsubscribe from the topic the client is not subscribed to. |
-
-## Cookies ##
-
-Cookie handling support is limited: all cookie's attributes are ignored.
-The library has only been tested with [Salesforce platform](https://developer.salesforce.com/docs/atlas.en-us.platform_events.meta/platform_events/platform_events_subscribe_cometd.htm).
 
 ## Examples ##
 

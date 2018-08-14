@@ -31,7 +31,7 @@ These settings affect the transport's behavior and the operations.
 
 | Key (String) | Value Type | Required? | Default | Description |
 | --- | --- | --- | --- | --- |
-| "url" | String | Yes | - | MQTT broker URL formatted as `ssl://<hostname>:<port>`. |
+| "url" | String | Optional | `ssl://mqtt.googleapis.com:8883` | MQTT broker URL formatted as `ssl://<hostname>:<port>`. |
 | "qos" | Integer | Optional | 0 | MQTT QoS. [Google IoT Core supports QoS 0 and 1 only](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#quality_of_service_qos). |
 | "keepAlive" | Integer | Optional | 60 | Keep-alive MQTT parameter. For more information, see [here](https://cloud.google.com/iot/docs/how-tos/mqtt-bridge?hl=ru#keep-alive). |
 
@@ -50,7 +50,7 @@ This method returns a new GoogleIoTCore.Client instance.
 | *registryId* | String | Yes | [Registry ID](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
 | *deviceId* | String | Yes | [Device ID](https://cloud.google.com/iot/docs/requirements?hl=ru#permitted_characters_and_size_requirements). |
 | *privateKey* | String | Yes | [Private key](https://cloud.google.com/iot/docs/how-tos/credentials/keys?hl=ru). |
-| [*configuration*](#configuration) | Table | Optional | Key-value table with settings. There are required and optional settings. |
+| [*configuration*](#configuration-1) | Table | Optional | Key-value table with settings. There are required and optional settings. |
 | [*onConnected*](#callback-onconnectederror) | Function | Optional | Callback called every time the client is connected. |
 | [*onDisconnected*](#callback-ondisconnectederror) | Function | Optional | Callback called every time the client is disconnected. |
 
@@ -104,11 +104,13 @@ The method returns nothing. A result of the operation may be obtained via the [*
 | *publicKey* | String  | Yes | [Public key](https://cloud.google.com/iot/docs/how-tos/credentials/keys?hl=ru) for a new device. |
 | *[onDone](#callback-ondoneerror)* | Function  | Optional | Callback called when the operation is completed or an error occurs. |
 
-### connect(*transport*) ###
+### connect(*[transport]*) ###
 
 This method opens a connection to Google IoT Core.
 
 For connectionless transports, like HTTP, immediately calls the onConnected callback (if specified in the client's constructor) with successful result.
+
+Default transport is [GoogleIoTCore.MqttTransport](#googleiotcoremqtttransport-class) with default configuration.
 
 Google IoT Core supports only one connection per device.
 
@@ -116,7 +118,7 @@ The method returns nothing. A result of the operation may be obtained via the [*
 
 | Parameter | Data Type | Required? | Description |
 | --- | --- | --- | --- |
-| *transport* | GoogleIoTCore.\*Transport  | Yes | Instance of GoogleIoTCore.\*Transport class. |
+| *transport* | GoogleIoTCore.\*Transport  | Optional | Instance of GoogleIoTCore.\*Transport class. |
 
 ### disconnect() ###
 
@@ -150,7 +152,7 @@ The method returns nothing. A result of the operation may be obtained via the [*
 
 This method enables [configuration receiving from Google IoT Core](https://cloud.google.com/iot/docs/how-tos/config/configuring-devices?hl=ru).
 
-The method works only for MQTT transport.
+The method works only for [MQTT transport](#googleiotcoremqtttransport-class).
 
 To enable the feature, specify the [*onReceive*](TODO) callback. To disable the feature, specify `null` as that callback.
 

@@ -220,10 +220,13 @@ An *Integer* error code which specifies a concrete error (if any) happened durin
 
 | Error Code | Error Name | Description |
 | --- | --- | --- |
-| 1 | BC_LIBRARY_ERROR_NOT_CONNECTED | The client is not connected. |
-| 2 | BC_LIBRARY_ERROR_ALREADY_CONNECTED | The client is already connected. |
-| 3 | BC_LIBRARY_ERROR_OP_NOT_ALLOWED_NOW | The operation is not allowed now. E.g. the same operation is already in process. |
-| 4 | BC_LIBRARY_ERROR_NOT_SUBSCRIBED | The client is not subscribed to the topic. E.g. it is impossible to unsubscribe from the topic the client is not subscribed to. |
+| 1000 | GOOGLE_IOT_CORE_ERROR_NOT_CONNECTED | The client is not connected. |
+| 1001 | GOOGLE_IOT_CORE_ERROR_ALREADY_CONNECTED | The client is already connected. |
+| 1002 | GOOGLE_IOT_CORE_ERROR_NOT_ENABLED | The feature is not enabled. |
+| 1003 | GOOGLE_IOT_CORE_ERROR_ALREADY_ENABLED | The feature is already enabled. |
+| 1004 | GOOGLE_IOT_CORE_ERROR_OP_NOT_ALLOWED_NOW | The operation is not allowed now. E.g. the same operation is already in process. |
+| 1005 | GOOGLE_IOT_CORE_ERROR_ALREADY_REGISTERED | Another device is already registered with the same Device ID. |
+| 1010 | GOOGLE_IOT_CORE_ERROR_GENERAL | General error. |
 
 ## Examples ##
 
@@ -235,4 +238,4 @@ Tests for the library are provided in the [tests](./tests) directory and describ
 
 ## License ##
 
-The BayeuxClient library is licensed under the [MIT License](./LICENSE)
+The GoogleIoTCore library is licensed under the [MIT License](./LICENSE).
